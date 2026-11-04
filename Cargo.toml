@@ -1,0 +1,24 @@
+[package]
+name = "multithreaded_data_transfer_rs"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+# Async runtime & I/O
+tokio = { version = "1.40", features = ["full"] }
+tokio-util = { version = "0.7", features = ["rt"] }
+async-channel = "2.3"
+
+# CPU-bound parallelism for directory scanning
+rayon = "1.10"
+
+# Sleek terminal UI (uv / pixi / rich style)
+indicatif = "0.17"
+console = "0.15"
+
+# CLI & Error handling
+clap = { version = "4.5", features = ["derive"] }
+thiserror = "1.0"
+
+# File metadata preservation
+filetime = "0.2"
