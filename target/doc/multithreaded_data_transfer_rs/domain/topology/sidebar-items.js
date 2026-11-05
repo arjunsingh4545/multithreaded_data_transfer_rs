@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["TransferKind"],"struct":["KindOverrides","Topology"]};

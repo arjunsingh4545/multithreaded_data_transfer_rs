@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["DEFAULT_CHUNK","DEFAULT_FLUSH_WINDOW","DEFAULT_MEM"],"fn":["pipeline_plan"],"struct":["PipelinePlan"]};

@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["MIN_CHUNK"],"enum":["Strategy"],"fn":["plan"],"mod":["parallel","pipeline","tuning","workload"],"struct":["CopyPlan"]};

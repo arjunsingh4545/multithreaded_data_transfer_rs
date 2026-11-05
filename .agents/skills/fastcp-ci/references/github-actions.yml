@@ -1,0 +1,99 @@
+# Template: copy to .github/workflows/ci.yml when the repo is hosted on GitHub.
+# Mirrors scripts/ci.sh, split into parallel jobs so failures surface fast.
+name: ci
+
+on:
+  push:
+    branches: [main, master]
+    tags: ["v*"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  RUSTDOCFLAGS: -D warnings
+  # If the crate lives in a subdirectory of the repo, set this and keep
+  # `defaults.run.working-directory` below in sync.
+  CRATE_DIR: .
+
+defaults:
+  run:
+    working-directory: .
+
+jobs:
+  # ── Tier 1: seconds. No compilation of dependencies. ──
+  lint-fast:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with: { components: rustfmt }
+      - run: cargo fmt --all -- --check
+      - run: bash .agents/skills/fastcp-ci/scripts/check_layers.sh "$CRATE_DIR"
+
+  # ── Tier 2: compile + static analysis. ──
+  clippy:
+    needs: lint-fast
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with: { components: clippy }
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy --locked --all-targets --all-features -- -D warnings
+
+  # ── Tier 2: tests on stable and the declared MSRV (Cargo.toml rust-version). ──
+  test:
+    needs: lint-fast
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: [stable, "1.88"]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with: { toolchain: "${{ matrix.toolchain }}" }
+      - uses: Swatinem/rust-cache@v2
+        with: { key: "${{ matrix.toolchain }}" }
+      # tests/cli.rs needs `kill` (procps) — present on ubuntu runners.
+      - run: cargo test --locked --all-targets
+      - run: cargo test --locked --doc
+
+  docs:
+    needs: lint-fast
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo doc --locked --no-deps
+
+  # ── Tier 3: release artifacts, only for tags. ──
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [clippy, test, docs]
+    strategy:
+      matrix:
+        target: [x86_64-unknown-linux-gnu, aarch64-unknown-linux-gnu]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with: { targets: "${{ matrix.target }}" }
+      - uses: Swatinem/rust-cache@v2
+        with: { key: "${{ matrix.target }}" }
+      - name: cross linker for aarch64
+        if: matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
+          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> "$GITHUB_ENV"
+      - run: cargo build --locked --release --target ${{ matrix.target }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fastcp-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/fastcp

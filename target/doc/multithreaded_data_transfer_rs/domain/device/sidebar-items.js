@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["DiskKind"],"struct":["DeviceId","DiskInfo","ParseDeviceIdError","ParseDiskKindError"]};

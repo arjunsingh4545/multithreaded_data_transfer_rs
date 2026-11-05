@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Role"],"struct":["NoProgress","WorkerIdx"],"trait":["ProgressSink"]};

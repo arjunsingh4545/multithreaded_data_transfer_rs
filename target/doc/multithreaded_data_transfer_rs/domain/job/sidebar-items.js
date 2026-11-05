@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["FileId","FileJob","FileMeta","ScanManifest","SymlinkJob"]};

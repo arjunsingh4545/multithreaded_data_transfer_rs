@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["apply_to_file","apply_to_path"]};

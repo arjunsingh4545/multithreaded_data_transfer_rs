@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["canonicalize_partial","display_name","is_within","nearest_existing","read_trimmed","rebase"],"struct":["RemoveOnDrop"]};
